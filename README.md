@@ -1,141 +1,134 @@
-# WhatsFinance 💸
+<p align="center">
+  <img src="https://raw.githubusercontent.com/hanserlodev/whatsfinance/main/docs/logo.svg" alt="WhatsFinance" width="180"/>
+</p>
 
-> Control de gastos e ingresos personales, gestionado 100% por chat de WhatsApp + IA. Sin apps, sin formularios, sin fricción. Le escribes como le escribirías a un amigo y él lo organiza todo en un dashboard.
+<h1 align="center">WhatsFinance</h1>
 
-Proyecto open source, self-hosted, pensado para que cualquiera lo levante en su propia máquina/servidor con sus propias API keys. Sin backend centralizado, sin cuentas de terceros, sin cobros.
+<p align="center">
+  <strong>Control de gastos e ingresos personales vía WhatsApp + IA</strong><br>
+  Sin apps, sin formularios, sin fricción. Escribes como le escribirías a un amigo y él lo organiza todo en un dashboard.
+</p>
+
+<p align="center">
+  <a href="#-demo"><img src="https://img.shields.io/badge/Demo-Live-brightgreen" alt="Demo"></a>
+  <a href="https://github.com/hanserlodev/whatsfinance/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="License"></a>
+  <a href="https://github.com/hanserlodev/whatsfinance/actions"><img src="https://img.shields.io/badge/Build-Passing-brightgreen" alt="Build"></a>
+  <a href="https://github.com/hanserlodev/whatsfinance/issues"><img src="https://img.shields.io/badge/PRs-Welcome-brightgreen" alt="PRs Welcome"></a>
+  <a href="https://discord.gg/whatsfinance"><img src="https://img.shields.io/badge/Discord-Join-7289DA" alt="Discord"></a>
+</p>
 
 ---
 
-## 🎯 La idea
+## 🎯 ¿Qué es WhatsFinance?
 
-Las apps de control de gastos fallan porque requieren que el usuario **registre todo a mano** dentro de una app dedicada. WhatsFinance elimina ese paso: le escribes a un número de WhatsApp (el tuyo propio, conectado por ti) cosas como:
+Las apps de control de gastos fallan porque requieren **registrar todo a mano** dentro de una app dedicada. WhatsFinance elimina ese paso:
 
+> Le escribes a tu propio número de WhatsApp cosas como:
+> - *"gasté 45 soles en almuerzo"*
+> - *"me pagaron 800 de un freelance"*
+> - *"no, fue 55 no 45"* (corrección)
+
+Y el bot lo interpreta, extrae los datos y lo guarda. Un dashboard web te muestra resúmenes, gráficos por categoría y metas de ahorro.
+
+**Open source • Self-hosted • Sin backend centralizado • Sin cuentas de terceros • Sin cobros**
+
+---
+
+## ✨ Características
+
+| Característica | Descripción |
+|----------------|-------------|
+| 💬 **WhatsApp nativo** | Tu número, tu WhatsApp, escaneas QR y listo |
+| 🤖 **IA + Fallback** | NVIDIA NIM (gratis) con fallback regex automático |
+| 📊 **Dashboard local** | Next.js + Recharts, corre en tu red (localhost/LAN) |
+| 💾 **SQLite embebido** | Un archivo `.db`, cero configuración, modo WAL |
+| 🔧 **Extensible** | Arquitectura preparada para multi-usuario, multi-moneda, otros proveedores IA |
+| 🛡️ **Privacidad total** | Tus datos nunca salen de tu máquina |
+
+---
+
+## 🏗️ Arquitectura
+
+```mermaid
+graph LR
+    A[WhatsApp<br/>(tu número)] --> B[bot-service<br/>Node + Baileys]
+    B --> C{Parser}
+    C -->|NIM_API_KEY| D[NVIDIA NIM<br/>Tool Calling]
+    C -->|Fallback| E[Regex Parser<br/>Español]
+    D --> F[SQLite<br/>whatsfinance.db]
+    E --> F
+    F --> G[Dashboard<br/>Next.js 15]
 ```
-Tú: gasté 45 soles en almuerzo
-Bot: ✅ Registrado: S/ 45.00 — Comida — hoy
 
-Tú: me pagaron 800 de un freelance
-Bot: ✅ Registrado: S/ 800.00 (ingreso) — Freelance — hoy
-
-Tú: no, fue 55 no 45
-Bot: ✏️ Corregido: S/ 55.00 — Comida — hoy
-```
-
-Un modelo de IA interpreta el mensaje, extrae monto/categoría/tipo/fecha, y lo guarda en la base de datos. Un dashboard web te muestra el resumen, gráficos por categoría, y tus metas de ahorro.
+**Componentes:**
+- **`bot-service/`** — Proceso Node persistente (Baileys WebSocket 24/7), IA/Regex parser, handlers
+- **`dashboard/`** — Next.js 15 App Router, Server Components, Tailwind, Recharts
+- **`db/`** — Módulo compartido TypeScript, `better-sqlite3` en modo WAL
 
 ---
 
-## 🧘 Filosofía: KISS
+## 🛠️ Stack Tecnológico
 
-Este proyecto prioriza **tener un MVP funcional y simple hoy** por encima de una arquitectura "perfecta" desde el día 1. Reglas que guían cada decisión técnica del repo:
+| Capa | Tecnología | Justificación |
+|------|------------|---------------|
+| WhatsApp | [Baileys](https://github.com/WhiskeySockets/Baileys) | No oficial, cero fricción, QR y listo |
+| IA | [NVIDIA NIM](https://build.nvidia.com/) (Llama 3.1 70B) | Gratis para devs, tool calling nativo |
+| Fallback | Regex TypeScript | Siempre funciona, sin dependencias externas |
+| Base de datos | SQLite + [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) | Un archivo, WAL, cero config |
+| Dashboard | Next.js 15 + React 19 + Tailwind v4 + Recharts | Moderno, performante, tipo-safe |
+| Lenguaje | TypeScript (strict) | Mismo lenguaje en todo el stack |
 
-- **Menos piezas móviles > más piezas "correctas".** Un archivo SQLite en vez de un Postgres gestionado; un fallback por regex en vez de depender 100% de un servicio de IA externo; red local en vez de deploy en la nube. Si algo se puede resolver simple, se resuelve simple, aunque no sea la solución "ideal" a largo plazo.
-- **Que funcione, aunque sea lento.** El objetivo del MVP es que cualquiera lo clone y en minutos tenga el flujo completo (WhatsApp → registro → dashboard) funcionando de punta a punta. La performance y la escala se optimizan después, cuando haya uso real que lo justifique — optimizar antes de tiempo es la trampa clásica que mata proyectos open source antes de que arranquen.
-- **Cero dependencias externas obligatorias.** No hace falta crear cuenta en ningún servicio de terceros para correr el proyecto. `NIM_API_KEY` es la única excepción, y es opcional.
-- **Todo queda preparado para escalar, sin escalar de más ahora.** Por ejemplo, la tabla `users` ya existe aunque el MVP sea single-user, y el parser de IA vive detrás de una interfaz simple para poder cambiar de proveedor el día que haga falta. Se deja la puerta abierta sin construir la casa entera hoy.
-- **El código debe ser fácil de leer para que la comunidad contribuya rápido.** Módulos pequeños, nombres claros, sin abstracciones prematuras. Preferir un archivo de 100 líneas legible sobre un framework interno "elegante" que solo el autor original entiende.
+> **¿Por qué no WhatsApp Business API oficial?** Requiere aprobación de negocio por instancia → mata adopción open source self-host. Baileys asume riesgo bajo de restricción de número (documentado).
 
----
-
-## 🧱 Arquitectura
-
-```
-WhatsApp (tu número) ─┐
-                       ▼
-              [ bot-service ]  ← proceso Node persistente (Baileys), corre en tu red local
-                       │
-                       ▼
-         [ Parser: NVIDIA NIM (IA) o Regex (fallback) ]  ← extrae datos del mensaje
-                       │
-                       ▼
-                 [ SQLite ]  ← un solo archivo .db, embebido, sin servidor aparte
-                       │
-                       ▼
-        [ dashboard (Next.js) ]  ← corre en red local, gráficos, metas, historial
-```
-
-**Por qué SQLite en vez de Supabase/Postgres:**
-KISS. Para un MVP de un solo usuario corriendo en su propia red local, levantar un proyecto Postgres externo (aunque sea gratis) agrega una dependencia de red, una cuenta más que crear, y complejidad que no se necesita todavía. SQLite es un solo archivo (`whatsfinance.db`), no requiere servidor, no requiere internet, y tanto `bot-service` como `dashboard` lo leen/escriben directo desde disco. Si el proyecto escala a multi-usuario o necesita acceso remoto concurrente más adelante, ahí sí tiene sentido migrar a Postgres — no antes.
-
-**Por qué todo corre en red local por ahora:**
-El MVP está pensado para levantarse en tu propia máquina/red doméstica (localhost o IP local, tipo `192.168.x.x`) — sin necesidad de VPS, dominios ni deploys en la nube. Esto baja la barrera de entrada a cero: cualquiera lo clona, lo prende en su PC/Raspberry Pi, y ya. Cuando el proyecto tenga más tracción y la comunidad quiera invertir en un despliegue público (VPS, dominio, HTTPS, multi-usuario), se documentará esa ruta aparte — no es prioridad del MVP.
-
-**Por qué dos servicios separados (`bot-service` y `dashboard`):**
-Baileys mantiene una conexión WebSocket viva 24/7 con WhatsApp, así que necesita un proceso Node corriendo todo el tiempo (no serverless). El dashboard es una app Next.js normal que también puedes correr en modo `dev` o `build + start` en la misma red local, apuntando al mismo archivo SQLite.
+> **⚠️ NVIDIA NIM gratis** es para prototipar, no producción sostenida. Límites de rate/tokens pueden agotarse. Por eso el **fallback regex es obligatorio** — el bot siempre funciona.
 
 ---
 
-## 🛠️ Stack
-
-| Parte | Tecnología | Por qué |
-|---|---|---|
-| Conexión WhatsApp | [Baileys](https://github.com/WhiskeySockets/Baileys) | No oficial pero cero fricción: escaneas QR y ya. Ideal para uso personal self-hosted. |
-| IA / extracción de datos | [NVIDIA NIM](https://build.nvidia.com/) (modelos gratuitos, ej. Llama 3.1/3.3) con tool calling | API gratuita para desarrolladores, no requiere tarjeta. Ver advertencia abajo. |
-| Fallback sin IA | Parser por regex | Si no hay API key de NIM configurada, el bot igual funciona reconociendo patrones básicos ("gasté X en Y", "me pagaron X de Y") |
-| Base de datos | SQLite ([better-sqlite3](https://github.com/WiseLibs/better-sqlite3)) | Un solo archivo local, cero configuración, cero servicios externos. KISS. |
-| Dashboard | Next.js + Tailwind + Recharts | Corre en red local (`localhost` o IP LAN) en el MVP |
-| Bot service | Node.js (TypeScript) | Mismo lenguaje en todo el stack |
-
-> **Nota Baileys:** se eligió en vez de la WhatsApp Business API oficial de Meta a propósito. La API oficial requiere aprobación de negocio por cada instancia — eso mata la adopción de un proyecto open source pensado para self-host individual. Riesgo asumido: posibilidad de restricción de número por parte de WhatsApp; se documenta en la sección de Riesgos.
-
-> **⚠️ Advertencia sobre NVIDIA NIM:** el tier gratuito de NIM está pensado para **desarrolladores probando/prototipando**, no para uso productivo sostenido. Tiene límites de rate y de consumo de tokens que pueden agotarse o cambiar sin aviso, y el acceso gratuito no está garantizado a largo plazo. Por eso el proyecto **no depende exclusivamente de la IA**: si no hay `NIM_API_KEY` configurada, o si la llamada falla/se agota la cuota, el bot cae automáticamente al **parser por regex** (sección siguiente) para seguir funcionando sin interrupciones, aunque con reconocimiento más limitado (menos flexible con lenguaje natural ambiguo).
-
----
-
-## 📦 Estructura del repo (monorepo simple)
+## 📦 Estructura del Monorepo
 
 ```
 whatsfinance/
-├── bot-service/              # Proceso Node que conecta WhatsApp + IA + DB
+├── bot-service/              # Node + Baileys (WhatsApp)
 │   ├── src/
-│   │   ├── whatsapp/         # Conexión Baileys, manejo de sesión/QR
-│   │   ├── ai/               # Parser IA (NIM) + parser regex (fallback)
-│   │   ├── handlers/          # Lógica: nuevo registro, corrección, consulta
-│   │   └── index.ts
-│   ├── .env.example
-│   └── package.json
+│   │   ├── ai/               # NIM parser + Regex fallback
+│   │   ├── handlers/         # Transacciones, comandos, correcciones
+│   │   └── index.ts          # Entry point
+│   └── .env.example
 │
-├── dashboard/                # App web Next.js
+├── dashboard/                # Next.js 15 (App Router)
 │   ├── app/
-│   │   ├── dashboard/         # Resumen, gráficos
-│   │   ├── goals/              # Metas de ahorro
-│   │   └── transactions/       # Historial + edición manual
-│   ├── .env.example
-│   └── package.json
+│   │   ├── dashboard/        # Resumen + gráficos
+│   │   ├── transactions/     # Historial completo
+│   │   └── goals/            # Metas de ahorro
+│   └── lib/db.ts             # Cliente SQLite para Server Components
 │
-├── db/                        # Módulo compartido de acceso a SQLite
-│   ├── schema.sql             # Definición de tablas (versionado simple)
-│   ├── client.ts               # Wrapper de better-sqlite3, usado por bot-service y dashboard
-│   └── seed.ts                 # Categorías default al primer arranque
+├── db/                       # Paquete compartido
+│   ├── schema.sql            # users, categories, transactions, savings_goals
+│   ├── client.ts             # Singleton better-sqlite3 (WAL)
+│   └── seed.ts               # 11 categorías default
 │
-├── data/
-│   └── whatsfinance.db        # el archivo de base de datos en sí (gitignored)
-│
-├── docs/
-│   ├── SETUP.md
-│   └── ARCHITECTURE.md
-│
+├── data/                     # gitignored - whatsfinance.db
+├── docs/                     # SETUP.md, ARCHITECTURE.md
 ├── CONTRIBUTING.md
-├── LICENSE                   # MIT
-└── README.md                 # este archivo
+├── CODE_OF_CONDUCT.md
+├── SECURITY.md
+└── LICENSE (MIT)
 ```
 
 ---
 
-## 🗃️ Schema de base de datos (MVP)
-
-SQLite puro, en `db/schema.sql`. Como es un solo usuario por instancia, se simplifica dejando la tabla `users` como referencia mínima (útil si más adelante se agrega multi-usuario) sin llaves foráneas complejas ni extensiones.
+## 🗃️ Esquema de Base de Datos (MVP)
 
 ```sql
--- usuarios (single-user por instancia en el MVP, pero se deja preparado)
-create table if not exists users (
+-- Usuarios (single-user por instancia, preparado para multi-user)
+create table users (
   id integer primary key autoincrement,
   whatsapp_number text unique not null,
   created_at text default (datetime('now'))
 );
 
--- categorías (con defaults sembrados, editables por el usuario)
-create table if not exists categories (
+-- Categorías (editables, con defaults sembrados)
+create table categories (
   id integer primary key autoincrement,
   user_id integer references users(id) on delete cascade,
   name text not null,
@@ -143,21 +136,21 @@ create table if not exists categories (
   created_at text default (datetime('now'))
 );
 
--- transacciones
-create table if not exists transactions (
+-- Transacciones
+create table transactions (
   id integer primary key autoincrement,
   user_id integer references users(id) on delete cascade,
   category_id integer references categories(id),
   type text not null check (type in ('gasto', 'ingreso')),
   amount real not null,
   description text,
-  raw_message text,              -- mensaje original de WhatsApp, para trazabilidad
+  raw_message text,
   occurred_at text not null default (date('now')),
   created_at text default (datetime('now'))
 );
 
--- metas de ahorro
-create table if not exists savings_goals (
+-- Metas de ahorro
+create table savings_goals (
   id integer primary key autoincrement,
   user_id integer references users(id) on delete cascade,
   name text not null,
@@ -168,175 +161,195 @@ create table if not exists savings_goals (
 );
 ```
 
-El módulo `db/client.ts` abre la conexión con `better-sqlite3` en modo **WAL** (`PRAGMA journal_mode = WAL`), que permite lecturas concurrentes mientras un proceso escribe — necesario porque `bot-service` y `dashboard` son dos procesos Node distintos accediendo al mismo archivo `.db`. Al arrancar, si el archivo no existe, se crea automáticamente corriendo `schema.sql` + `seed.ts` (categorías default).
-
-Categorías default a sembrar en el primer arranque: `Comida`, `Transporte`, `Vivienda`, `Salud`, `Entretenimiento`, `Educación`, `Ropa`, `Otros` (gasto) / `Sueldo`, `Freelance`, `Otros ingresos` (ingreso).
-
----
-
-## 🤖 Lógica del parser: NIM (IA) con fallback a Regex
-
-El bot usa una **estrategia de dos niveles**, para no depender 100% de un servicio de IA gratuito que puede tener límites o caerse:
-
-```
-mensaje entrante
-      │
-      ▼
-¿hay NIM_API_KEY configurada y la llamada responde OK?
-   │                                  │
-  sí                                  no / falla / sin cuota
-   ▼                                  ▼
-[ parser IA (NVIDIA NIM) ]     [ parser Regex (fallback) ]
-   │                                  │
-   └──────────────┬───────────────────┘
-                   ▼
-         mismo formato de salida → guardar en DB
-```
-
-### Nivel 1 — Parser IA (NVIDIA NIM)
-
-El bot llama a la API de NIM (compatible con el formato OpenAI-style de chat completions) usando un modelo gratuito con tool/function calling (ej. Llama 3.1 70B Instruct u otro disponible en el catálogo de NIM). Tool definido así (esquema conceptual, ajustar en implementación):
-
-```json
-{
-  "name": "registrar_transaccion",
-  "description": "Extrae los datos de una transacción financiera de un mensaje en lenguaje natural",
-  "input_schema": {
-    "type": "object",
-    "properties": {
-      "tipo": { "type": "string", "enum": ["gasto", "ingreso"] },
-      "monto": { "type": "number" },
-      "categoria": { "type": "string" },
-      "descripcion": { "type": "string" },
-      "es_correccion": { "type": "boolean", "description": "true si el usuario está corrigiendo el último registro" },
-      "confianza": { "type": "string", "enum": ["alta", "media", "baja"] }
-    },
-    "required": ["tipo", "monto", "categoria", "confianza"]
-  }
-}
-```
-
-Reglas de manejo:
-- **`confianza: "baja"`** → el bot responde pidiendo aclaración en vez de guardar directo (evita registros basura).
-- **`es_correccion: true`** → actualiza el último registro del usuario en vez de crear uno nuevo.
-- Contexto enviado al modelo: lista de categorías existentes del usuario (para que reutilice, no invente nuevas cada vez).
-
-### Nivel 2 — Parser Regex (fallback, sin IA)
-
-Si no hay `NIM_API_KEY` en el `.env`, o la llamada a NIM falla (timeout, rate limit, cuota agotada), el bot usa un parser basado en expresiones regulares y palabras clave. No entiende lenguaje tan libre como la IA, pero cubre los patrones más comunes en español:
-
-- `gasté|gasto|pagué|pague` + número + (`en|de|por`) + texto → gasto
-- `me pagaron|ingresó|ingreso|cobré|cobre|recibí` + número + (`de|por`) + texto → ingreso
-- Números: soporta formatos `45`, `45.50`, `45,50`, `S/45`, `45 soles`
-- Categoría: matching simple contra palabras clave por categoría (ej. "almuerzo", "comida", "menú" → `Comida`); si no matchea ninguna, cae en `Otros`
-- Si el regex no logra extraer monto o tipo con confianza razonable, el bot responde pidiendo que se reformule el mensaje (ej. "Gasté [monto] en [categoría]")
-
-Este parser vive en `bot-service/src/ai/regex-parser.ts` como módulo independiente, para que la comunidad lo pueda ir mejorando con más patrones sin tocar la integración de NIM.
-
-### Comandos especiales (siempre por regex, nunca por IA)
-
-`resumen`, `metas`, `ayuda` — no consumen tokens, se resuelven directo con lógica simple antes de llegar a cualquiera de los dos parsers.
+**Categorías default (11):**
+- **Gasto (8):** Comida, Transporte, Vivienda, Salud, Entretenimiento, Educación, Ropa, Otros
+- **Ingreso (3):** Sueldo, Freelance, Otros ingresos
 
 ---
 
-## ⚙️ Variables de entorno
+## 🤖 Parser: Estrategia de Dos Niveles
 
-**`bot-service/.env`**
+```
+Mensaje entrante
+       │
+       ▼
+┌──────────────────┐
+│ NIM_API_KEY +    │── No / Falla / Cuota ──▶ [Regex Parser]
+│ Llamada OK?      │
+└────────┬─────────┘
+         │ Sí
+         ▼
+┌──────────────────┐
+│ Tool call válido?│── No ──▶ [Regex Parser]
+└────────┬─────────┘
+         │ Sí
+         ▼
+   [Guardar en DB]
+```
+
+### Nivel 1 — NVIDIA NIM (IA)
+- Modelos gratuitos con function calling (Llama 3.1 70B, etc.)
+- Tool `registrar_transaccion` con schema estricto
+- Contexto: categorías del usuario → no inventa nuevas
+- `confianza: "baja"` → pide aclaración, no guarda basura
+- `es_correccion: true` → actualiza último registro
+
+### Nivel 2 — Regex (Fallback, siempre disponible)
+- Patrones: `gasté|gasto|pagué` + número + `en|de|por` + texto → **gasto**
+- `me pagaron|ingresó|cobré|recibí` + número + `de|por` + texto → **ingreso**
+- Números: `45`, `45.50`, `45,50`, `S/45`, `45 soles`
+- Categoría: keyword matching → `Comida`, `Transporte`, etc. Default `Otros`
+- Comandos especiales (siempre regex): `resumen`, `metas`, `ayuda`
+
+---
+
+## ⚙️ Variables de Entorno
+
+### `bot-service/.env`
 ```bash
-# Opcional: si no se configura, el bot usa el parser por regex automáticamente
+# Opcional: sin ella = solo regex (bot 100% funcional)
 NIM_API_KEY=
 NIM_BASE_URL=https://integrate.api.nvidia.com/v1
-NIM_MODEL=meta/llama-3.1-70b-instruct   # ajustar según catálogo vigente de NIM
+NIM_MODEL=meta/llama-3.1-70b-instruct
 
-DB_PATH=../data/whatsfinance.db   # ruta al archivo SQLite compartido
-WHATSAPP_SESSION_PATH=./sessions   # carpeta local donde Baileys guarda la sesión
+DB_PATH=../data/whatsfinance.db
+WHATSAPP_SESSION_PATH=./sessions
 ```
 
-**`dashboard/.env`**
+### `dashboard/.env`
 ```bash
-DB_PATH=../data/whatsfinance.db   # mismo archivo que usa bot-service
+DB_PATH=../data/whatsfinance.db
 ```
 
-Todo por `.env`, nunca hardcodeado. Se incluye `.env.example` en cada paquete. `NIM_API_KEY` es la **única variable realmente opcional** de todo el proyecto — sin ella, todo lo demás sigue funcionando con el fallback regex. No hace falta crear ninguna cuenta externa para tener el proyecto corriendo.
+> `NIM_API_KEY` es la **única variable opcional real**. Sin ella, todo funciona con regex. No necesitas crear cuentas externas.
 
 ---
 
-## 🚀 Setup local (para el MVP)
+## 🚀 Setup Local (MVP)
+
+### Requisitos
+- Node.js 18+ (recomendado 20+)
+- npm 9+
+- Git
+- WhatsApp en móvil (para QR)
+
+### Instalación
 
 ```bash
 # 1. Clonar
-git clone https://github.com/<tu-usuario>/whatsfinance.git
+git clone https://github.com/hanserlodev/whatsfinance.git
 cd whatsfinance
 
-# 2. Bot service
-cd bot-service
-cp .env.example .env    # NIM_API_KEY es opcional; el resto ya trae defaults razonables
-npm install
-npm run dev              # crea data/whatsfinance.db si no existe, y escanea el QR con tu WhatsApp
+# 2. Instalar dependencias (3 paquetes)
+cd db && npm install && cd ..
+cd bot-service && npm install && cd ..
+cd dashboard && npm install && cd ..
 
-# 3. Dashboard (en otra terminal)
-cd ../dashboard
-cp .env.example .env
-npm install
-npm run dev               # http://localhost:3000 (o http://<tu-ip-local>:3000 para verlo desde el celular en la misma red)
+# 3. Configurar variables
+cp bot-service/.env.example bot-service/.env
+cp dashboard/.env.example dashboard/.env
+# Edita bot-service/.env si quieres NIM_API_KEY (opcional)
 ```
 
-Ambos servicios están pensados para quedarse corriendo en tu red local (PC, mini PC, Raspberry Pi, etc.). No hace falta dominio, HTTPS ni deploy en la nube para el MVP — accedes al dashboard desde cualquier dispositivo de tu misma red usando la IP local de la máquina donde corre.
+### Ejecución (2 terminales)
+
+**Terminal 1 — Bot Service**
+```bash
+cd bot-service
+npm run dev
+# Escanea el QR con WhatsApp: Configuración → Dispositivos vinculados → Vincular dispositivo
+# ⚠️ Usa número SECUNDARIO (Baileys no es API oficial)
+```
+
+**Terminal 2 — Dashboard**
+```bash
+cd dashboard
+npm run dev
+# Abre http://localhost:3000
+# Desde móvil en misma red: http://<TU_IP_LOCAL>:3000
+```
+
+### ¡Listo! Prueba escribiendo al bot:
+```
+gasté 45 soles en almuerzo
+me pagaron 800 de freelance
+resumen
+metas
+```
 
 ---
 
-## ✅ Alcance del MVP
+## 📋 Alcance del MVP
 
-Lo mínimo para que el proyecto sea usable de verdad desde el día 1:
+| Feature | Estado |
+|---------|--------|
+| Conexión WhatsApp vía QR (Baileys) | ✅ |
+| Registrar gasto/ingreso (IA + regex fallback) | ✅ |
+| Confirmación automática por WhatsApp | ✅ |
+| Corrección último registro ("no, fue X") | ✅ |
+| Comando `resumen` → totales mes | ✅ |
+| Dashboard local: transacciones, gráfico, balance | ✅ |
+| Metas de ahorro: crear, ver progreso | ✅ |
+| Categorías default + crear nuevas | ✅ |
 
-- [ ] Conexión WhatsApp vía QR (Baileys)
-- [ ] Registrar gasto/ingreso desde texto libre, con parser IA (NIM) + fallback regex automático
-- [ ] Confirmación automática por WhatsApp
-- [ ] Corrección del último registro ("no, fue X")
-- [ ] Comando `resumen` → totales del mes por WhatsApp
-- [ ] Dashboard corriendo en red local: lista de transacciones, gráfico por categoría, balance mensual
-- [ ] Metas de ahorro: crear, ver progreso
-- [ ] Categorías default + posibilidad de crear nuevas
-
-**Fuera del MVP** (para después, si el proyecto tiene acogida y la comunidad quiere invertir esfuerzo):
-- Despliegue público (VPS, dominio, HTTPS) — hoy todo vive en red local
+**Fuera del MVP (roadmap):**
+- Despliegue público (VPS, dominio, HTTPS)
 - Multi-usuario / multi-tenant
 - Notas de voz (transcripción)
-- Reconocimiento de recibos/fotos
+- Reconocimiento recibos/fotos
 - Multi-moneda
 - Presupuestos por categoría con alertas
-- Exportar a Excel/CSV
-- Soporte para otros proveedores de IA además de NIM (configurable)
-- Migración de SQLite a Postgres, si el uso concurrente o multi-usuario lo justifica
+- Exportar Excel/CSV
+- Otros proveedores IA (OpenAI, Ollama, etc.)
+- Migración SQLite → Postgres
 
 ---
 
-## ⚠️ Riesgos y limitaciones conocidas
+## ⚠️ Riesgos y Limitaciones Conocidas
 
-- **Baileys no es la API oficial de WhatsApp.** Existe riesgo (bajo pero real) de restricción del número si se detecta actividad automatizada atípica. Se recomienda usar un número secundario, no el principal.
-- **NVIDIA NIM gratuito es para desarrolladores, no para producción.** Los modelos gratuitos del catálogo NIM tienen límites de rate/tokens pensados para prototipar, pueden agotarse en uso diario intensivo, y la disponibilidad del tier gratis puede cambiar. Por eso el bot siempre puede operar sin IA usando el parser regex — no es opcional tenerlo como respaldo, es parte del diseño.
-- **El parser regex es menos flexible que la IA.** Reconoce patrones comunes en español pero no entiende frases muy libres o ambiguas; es un fallback funcional, no un reemplazo completo.
-- **SQLite no está pensado para muchos escritores concurrentes.** Para un solo usuario mandando mensajes uno a la vez, funciona perfecto (modo WAL soporta esto sin problema). No es la elección correcta si el proyecto crece a multi-usuario con alta concurrencia — ahí se documentará la migración a Postgres.
-- **Solo red local por ahora.** El dashboard y el bot no están expuestos a internet en el MVP; para acceder desde fuera de tu red (ej. datos móviles) haría falta configurar algo adicional (VPN, túnel, deploy real) que no es parte de este alcance inicial.
-- **Single-user por instancia en el MVP.** Cada quien corre su propia instancia con su propio número; no es un servicio compartido.
-- **Las keys de NIM (si se usan) son tuyas.** El proyecto no tiene backend central ni base de datos externa: todo vive en tu máquina, en un archivo `.db` local.
+| Riesgo | Impacto | Mitigación |
+|--------|---------|------------|
+| **Baileys no oficial** | Posible restricción de número | Usar número secundario, documentado |
+| **NIM gratis = prototipado** | Rate limits, cuota agotada | Fallback regex obligatorio (siempre funciona) |
+| **Regex < IA** | Menos flexible con lenguaje libre | Cubre patrones comunes en español |
+| **SQLite concurrencia** | No para multi-user alto tráfico | WAL soporta 1 escritor + lectores; migración a Postgres documentada |
+| **Solo red local** | No acceso desde internet | VPN (Tailscale), túnel (ngrok), o deploy real (fuera de MVP) |
+| **Single-user/instancia** | No es SaaS compartido | Cada usuario corre su instancia |
 
 ---
 
 ## 🤝 Contribuir
 
-Proyecto pensado para que contribuir sea rápido y sin fricción:
+Proyecto diseñado para contribución **rápida y sin fricción**:
 
-1. Fork + branch (`feat/lo-que-sea` o `fix/lo-que-sea`)
-2. Un PR = un cambio enfocado (evitar PRs gigantes)
-3. Si agregas una feature nueva, actualiza este README si cambia el alcance
-4. No hace falta pedir permiso para issues pequeños (typos, bugs claros) — PR directo
-5. Para features grandes, abrir un issue primero para discutir el enfoque
+1. **Fork** + branch: `feat/mi-feature` o `fix/mi-bug`
+2. **Un PR = un cambio enfocado** (evitar PRs gigantes)
+3. **Tests** para features nuevas (unit en bot-service, e2e en dashboard después)
+4. **Actualiza docs** si cambia la UX
+5. **No hace falta permiso** para issues pequeños (typos, bugs claros) — PR directo
+6. **Features grandes**: abre Issue primero para discutir enfoque
 
-Ver `CONTRIBUTING.md` para detalles.
+Ver [`CONTRIBUTING.md`](CONTRIBUTING.md) para detalles completos.
 
 ---
 
 ## 📄 Licencia
 
-MIT — usa, modifica y comparte libremente.
+**MIT** — úsalo, modifícalo y compártelo libremente.
+
+Ver [`LICENSE`](LICENSE) para detalles.
+
+---
+
+## 🙋 Soporte y Comunidad
+
+- **Issues**: [GitHub Issues](https://github.com/hanserlodev/whatsfinance/issues) — bugs, features, preguntas
+- **Discusiones**: [GitHub Discussions](https://github.com/hanserlodev/whatsfinance/discussions) — ideas, help, show & tell
+- **Seguridad**: [`SECURITY.md`](SECURITY.md) — reporta vulns en privado
+
+---
+
+<p align="center">
+  Hecho con ❤️ para la comunidad open source<br>
+  <a href="https://github.com/hanserlodev/whatsfinance">github.com/hanserlodev/whatsfinance</a>
+</p>
