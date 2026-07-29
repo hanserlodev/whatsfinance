@@ -1,0 +1,9 @@
+{
+  "name": "whatsfinance",
+  "private": true,
+  "scripts": {
+    "bot": "cd bot-service && npm run dev",
+    "dashboard": "cd dashboard && npm run dev",
+    "install:all": "cd db && npm install && cd ../bot-service && npm install && cd ../dashboard && npm install"
+  }
+}

@@ -1,0 +1,29 @@
+node_modules/
+data/
+sessions/
+.env
+*.db
+dist/
+.next/
+*.log
+npm-debug.log*
+.vercel
+.netlify
+
+# Build artifacts
+db/dist/
+db/*.js
+db/*.d.ts
+db/*.js.map
+bot-service/dist/
+dashboard/out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
